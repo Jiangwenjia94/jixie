@@ -1,0 +1,5 @@
+CONFIG
+ADDRESS=http://localhost:8080
+TITLE=Ë÷ÈðÍþ¿Æ¼¼£¨Soarway Technology£©
+IP=127.0.0.1
+PORT=8080

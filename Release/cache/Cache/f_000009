@@ -1,0 +1,606 @@
+/**
+ * Created by Administrator on 2016/5/12.
+ * 系统顶部导航栏和左侧菜单栏所涉及到的所有通用功能实现
+ */
+/**
+ *顶部导航栏滚动
+ */
+$.ajaxSetup({
+    async : false
+});
+var index=0;
+var maxAnimateLi=0;
+var ml=0;
+var liWidth=parseInt($("#menuSection").css("width"))*0.25-1+"px";
+$(document).ready(function(){
+    initNavbar();
+    $(window).resize(function() {
+        liWidth=parseInt($("#menuSection").css("width"))*0.25-1+"px";
+    });
+});
+
+
+document.getElementById("menuSection").onmousewheel=function(event) {
+    maxAnimateLi=document.getElementById("menuSection").getElementsByTagName("li").length-4;
+    var w=parseInt($("#navbar-firstList li").css("width"));
+    if(event.wheelDelta<0) {
+        //向上滚动，导航栏右移
+        if(index<maxAnimateLi) {
+            index++;
+        }
+    }else {
+        if(index>0) {
+            index--;
+        }
+    }
+
+    ml=-w*index;
+    var nfWidth=parseInt($("#menuSection").css("width"))+(w+1)*index;
+    $("#navbar-firstList").css("width",nfWidth+"px");
+    $("#navbar-firstList").css("margin-left",ml+"px");
+    leftRightDisplay();
+}
+
+$("#goLeftMenu").click(function() {
+    var w=parseInt($("#navbar-firstList li").css("width"));
+    if(index>0) {
+        index--;
+    }
+    ml=-w*index;
+    var nfWidth=parseInt($("#menuSection").css("width"))+(w+1)*index;
+    $("#navbar-firstList").css("width",nfWidth+"px");
+    $("#navbar-firstList").css("margin-left",ml+"px");
+    leftRightDisplay();
+});
+$("#goRightMenu").click(function() {
+    maxAnimateLi=document.getElementById("menuSection").getElementsByTagName("li").length-4;
+    var w=parseInt($("#navbar-firstList li").css("width"));
+    if(index<maxAnimateLi) {
+        index++;
+    }
+    ml=-w*index;
+    var nfWidth=parseInt($("#menuSection").css("width"))+(w+1)*index;
+    $("#navbar-firstList").css("width",nfWidth+"px");
+    $("#navbar-firstList").css("margin-left",ml+"px");
+    leftRightDisplay();
+});
+
+//控制导航图标是否显现
+var lrState=0;//0不显现，1显现
+$(".topNav").hover(function() {
+    lrState=1;
+    leftRightDisplay();
+},function() {
+    lrState=0;
+    leftRightDisplay();
+});
+
+function leftRightDisplay() {
+    //左侧
+    var marlef=parseInt($("#navbar-firstList").css("margin-left"));
+    if(marlef==0) {
+        document.getElementById("goLeftMenu").style.display="none";
+    }else if(marlef!=0&&lrState==0) {
+        document.getElementById("goLeftMenu").style.display="none";
+    }else {
+        document.getElementById("goLeftMenu").style.display="block";
+    }
+    //右侧
+    maxAnimateLi=document.getElementById("menuSection").getElementsByTagName("li").length-4;
+    if(index>=maxAnimateLi) {
+        document.getElementById("goRightMenu").style.display="none";
+    }else if(index<maxAnimateLi&&lrState==0) {
+        document.getElementById("goRightMenu").style.display="none";
+    }else {
+        document.getElementById("goRightMenu").style.display="block";
+    }
+}
+
+var min=0;
+var max=0;
+var x=0;//导航的模块数目
+var firstLi="";
+var course;
+function  initNavbar()
+{
+    addFirstItemStyle();//顶部导航栏，添加零级目录项滑动和点击效果
+    setBodyHeightSelfAdaptation();//内容高度自适应
+    setLeftItemClick();////左侧菜单栏，绑定按钮点击展开/隐藏子目录
+    setScrollStyle();//给左侧菜单栏和选择课程部分添加滚动条
+    setIframeInterval();//定时刷新iframe的高度
+    addFirstItemStyle();
+    showPersonalCenter();//为平台用户和管理员添加个人中心，设置导航栏头像的点击事件
+    setSelectCourseBoxStyle();
+    course=new ves.Course({
+        courseId:courseId,
+        courseName:courseName,
+        courseType:courseType,
+        itemId:itemId,
+        userType:userType,
+        getFirstItemCallback:getFirstItemCallback,
+        getCourseListCallback:getCourseListCallback,
+    });
+    course.getFirstLevelItem();
+    course.getCourseListById();
+}
+
+//执行course类后的回调函数
+
+function getFirstItemCallback(data)
+{
+    document.getElementById("navbar-firstList").innerHTML=firstLi;
+    if($("#navbar-firstList").find("li").length>0) {
+        $("#navbar-firstList").find("li")[0].style.width=liWidth;
+    }
+    if(data[0].result==1&&data[0].list) {
+        majId=data[0].list[0].majId;
+        //加载顶端导航栏
+        itemStr="";
+        $.each(data[0].list, function (i, item0) {
+            var hasLogo=item0.logoPath;
+            var modalType=item0.name[item0.name.length-1];
+            var logo="";
+            if(hasLogo=="")
+            {
+                if(modalType=="0"){ logo="/img/topNav1.png";}
+                if(modalType=="1"){logo="/img/topNav24.png"}
+                if(modalType=="2"){logo="/img/topNav55.png"}
+                if(modalType=="3"){logo="/img/topNav56.png"}//谁知道这是什么
+                if(modalType=="4"){logo="/img/topNav56.png"}
+            }
+            else{logo=item0.logoPath;
+                modalType="hadLogo"
+            }
+            itemStr+="<li style='margin: 0px 0px;width:"+liWidth+";height:100%;display: block;'>"+
+                "<a href='#' style='height:100%;' modalType='"+modalType+"' class='topnav-title'  id='topNav"+item0.puciId+"' onclick=course.loadPage('"+ item0.puciId+"','"+item0.name+"')>"+
+                "<div class='imgContainer'><img src='"+logo+"'/>"+item0.name.substring(0,item0.name.length-2)+"</div></a></li>";
+            x++;
+        });
+        //$("#navbar-firstList").append(itemStr);
+        $("#navbar-firstList").css("width",$("#menuSection").css("width"));
+        $("#navbar-firstList").css("margin-left","0");
+        if($("#navbar-firstList").find("li").length>0) {
+            $("#navbar-firstList").find("li")[0].style.width=liWidth;
+        }
+        document.getElementById("navbar-firstList").innerHTML+=itemStr;
+        //自动选择一门课程
+        if(itemStr!="") {
+            document.getElementById("courseInput").value=$("#course" + data[0].list[0].couId).html();
+        }else {
+            document.getElementById("courseInput").value="课程选择";
+        }
+
+        //选择第一个模块
+        if($("#navbar-firstList").find("a").length>0) {
+            $("#navbar-firstList").find("a")[0].click();
+        }
+    }
+}
+
+function chooseMenu() {
+    var choose=$("#topNav"+course.itemId).attr("modalType");
+    if($(".titleSelected").find("img").length!=0) {
+        $(".titleSelected").children("div").children("img").attr("src", $(".titleSelected").find("img")[0].src.slice(0, -11) + ".png");
+        $(".titleSelected").css("color", "black");
+    }
+    if(choose=="hadLogo")
+    {
+        $(".topnav-title").removeClass('titleSelected');
+        $("#topNav"+course.itemId).css("color","white");
+        $("#topNav"+course.itemId).addClass("titleSelected").children("div").children("img").attr("src",$("#topNav"+course.itemId).find("img")[0].src.slice(0, -4) + "checked.png");
+    }
+    else
+    {
+        $(".topnav-title").removeClass('titleSelected');
+        $("#topNav"+course.itemId).css("color","white");
+        $("#topNav"+course.itemId).addClass("titleSelected").children("div").children("img").attr("src",$("#topNav"+course.itemId).find("img")[0].src.slice(0, -4) + "checked.png");
+
+    }
+    if(!course.itemId)//如果没有默认的itemId，则选取零级目录中对应的第一项来显示
+    {
+        $("#mgrCenter").addClass("titleSelected").children("div").children("img").attr("src","/img/mgrCenterchecked.png");
+        $.each(data[0].list, function (i, item0) {
+            if (ves.isContain(item0.name,ves.Constant.ITEM_TYPE.teach)) {
+                course.itemId=item0.puciId;
+                if($("#isStart").val()==1){
+                    $("#topNav"+course.itemId).trigger("click");
+                }
+                return false;
+            }else
+            {return true;}
+        });
+    }
+}
+
+function count(id){
+    var param = {
+        "couId": id
+    }
+    var res = $.post("/course-manager-action!updateNumberByID",
+        param,
+        function (data) //回调函数
+        {
+            //console.log(data);
+            //alert(JSON.stringify(data));
+           getNumber(id);
+        }, "json"
+    ).error(function () {
+            window.location.href = "http://" + window.location.host + "/loginInform.jsp";
+        });
+}
+function calcutime(id,time){
+    var param = {
+        "couId": id,
+        "tim":time
+    }
+    var res = $.post("/course-manager-action!updateTimeByID",
+        param,
+        function (data) //回调函数
+        {
+            //console.log(data);
+            //alert(JSON.stringify(data));
+            getTime(id);
+        }, "json"
+    ).error(function () {
+            window.location.href = "http://" + window.location.host + "/loginInform.jsp";
+        });
+}
+//function getCurrenttime()
+//{
+//    var timeStr = '';
+//    var curDate = new Date();
+//    var curHour = curDate.getHours();      //获取当前小时数(0-23)
+//    var curMinute = curDate.getMinutes();   // 获取当前分钟数(0-59)
+//    var curSec =curDate.getSeconds();      //获取当前秒数(0-59)
+//    if(curHour < 10)
+//    {
+//        if(curMinute < 10)
+//        {
+//            if(curSec < 10)
+//            {
+//                timeStr += ' 0'+curHour+':0'+curMinute+':0'+curSec;
+//            }
+//            else
+//            {
+//                timeStr += ' 0'+curHour+':0'+curMinute+':'+curSec;
+//            }
+//        }
+//        else
+//        {
+//            if(curSec < 10)
+//            {
+//                timeStr += ' 0'+curHour+':'+curMinute+':0'+curSec;
+//            }
+//            else
+//            {
+//                timeStr += ' 0'+curHour+':'+curMinute+':'+curSec;
+//            }
+//        }
+//    }
+//    else
+//    {
+//        if(curMinute < 10)
+//        {
+//            if(curSec < 10)
+//            {
+//                timeStr += ' '+curHour+':0'+curMinute+':0'+curSec;
+//            }
+//            else
+//            {
+//                timeStr += ' '+curHour+':0'+curMinute+':'+curSec;
+//            }
+//        }
+//        else
+//        {
+//            if(curSec < 10)
+//            {
+//                timeStr += ' '+curHour+':'+curMinute+':0'+curSec;
+//            }
+//            else
+//            {
+//                timeStr += ' '+curHour+':'+curMinute+':'+curSec;
+//            }
+//        }
+//    }
+//    $("#time").text(timeStr);
+//}
+
+function getNumber(id){
+    var param = {
+        "couId": id
+    }
+    var res = $.post("/course-manager-action!getNumberByID",
+        param,
+        function (data) //回调函数
+        {
+            //console.log(data);
+            //alert(JSON.stringify(data));
+            $("#cishu1").val(data);
+            //$("#cishu1").attr('value', data);
+        }, "json"
+    ).error(function () {
+            window.location.href = "http://" + window.location.host + "/loginInform.jsp";
+        });
+}
+
+function getTime(id){
+
+    var param = {
+        "couId": id
+    }
+    var res = $.post("/course-manager-action!getTimeByID",
+        param,
+        function (data) //回调函数
+        {
+            var result=formatSeconds(data);
+            function formatSeconds(value) {
+
+                var theTime =value;// 秒
+
+                var theTime1 = 0;// 分
+
+                var theTime2 = 0;// 小时
+
+                if(theTime > 60) {
+
+                    theTime1 = parseInt(theTime/60);
+
+                    //theTime = parseInt(theTime%60);
+
+                    if(theTime1 > 60) {
+
+                        theTime2 = parseInt(theTime1/60);
+
+                        theTime1 = parseInt(theTime1%60);
+
+                    }
+
+                }else{
+                    var result =" 0"+"分";
+                }
+
+                //var result = ""+parseInt(theTime)+"秒";
+
+                if(theTime1 > 0) {
+
+                   var result = ""+parseInt(theTime1)+"分";
+
+                }
+
+                if(theTime2 > 0) {
+
+                    result = ""+parseInt(theTime2)+"小时"+result;
+
+                }
+
+                return result;
+
+            }
+            //console.log(data);
+            //alert(JSON.stringify(data));
+            $("#shichang1").val(result);
+            //$("#cishu1").attr('value', data);
+
+        }, "json"
+    ).error(function () {
+            window.location.href = "http://" + window.location.host + "/loginInform.jsp";
+        });
+}
+
+function getCourseListCallback(data)
+{
+    if(course.userType==ves.Constant.USER_TYPE.student||course.userType==ves.Constant.USER_TYPE.teacher)
+    {
+        if(data[0].result==1)
+        {
+            if(!data[0].list)
+            {return;}
+            $("#selectCourseBox").html("");
+            $.each(data[0].list, function (i, item) {
+
+                var strData="<div class='panel panel-success' style='text-align: center'>" +
+                    "<div class='panel-heading' style=' background-color:rgb(7, 115, 196)'>"
+                    + "<h4 class='panel-title'><a data-toggle='collapse' style='font-size: 14px;color: white' data-parent='#selectCourseBox'"
+                    + "href='#maj"+item.majId+"'>"+item.majName+"</a></h4></div>"
+                    +"<div id='maj"+item.majId+"' class='panel-collapse collapse '><div class='panel-body' '>";
+
+                var strData2="<table><tr>" +
+                    "<th><h5>"+item.majName+"</a></h5></th>";
+                $.each(item.courseList, function (i, courseItem) {
+                    strData+="<a class='list-group-item courseItem' href='javascript:;' id='course"+courseItem[0]+"' onclick='course.setCourse("+courseItem[0]+")'>"+courseItem[1]+"</a>";
+                    strData2+="<td><a class='list-group-item courseItem' href='javascript:;' id='course"+courseItem[0]+"' onclick='course.setCourse("+courseItem[0]+")'>"+courseItem[1]+"</a></td>";
+                });
+                strData+="</div></div></div>";
+                strData2+="</tr></table>";
+                //$("#navbar-courseList").append(strData2);
+                $("#selectCourseBox").append(strData);
+            });
+            if(course.courseId=="")
+            {
+                course.courseId=data[0].list[0].courseList[0][0];
+                $("#selectCourseBtn").html(data[0].list[0].courseList[0][1]);
+                course.courseName=data[0].list[0].courseList[0][1];
+                course.getFirstLevelItem();
+            }
+
+        }
+    }
+    else
+    {
+        var strData="<div class='panel panel-success' style='text-align: center'><div class='panel-heading' style=' background: rgb(8,115,197);border-color:white '>"
+            + "<h4 class='panel-title'><a data-toggle='collapse' style='font-size: 14px;color:white' data-parent='#selectCourseBox'"
+            + "href='#maj"+data.major.majorId+"'>"+data.major.majorname+"</a></h4></div>"
+            +"<div id='maj"+data.major.majorId+"' class='panel-collapse collapse '><div class='panel-body' '>";
+        $.each(data.listdata, function (i, courseItem) {
+            strData+="<a class='list-group-item courseItem' href='javascript:;' id='course"+courseItem[0]+"' onclick='course.setCourse("+courseItem[0]+")'>"+courseItem[1]+"</a>";
+
+        });
+        strData+="</div></div></div>";
+        $("#selectCourseBox").append(strData);
+        if(course.courseId==""&&data.listdata.length)
+        {
+            course.courseId=data.listdata[0][0];
+            //$("#selectCourseBtn").html(data.listdata[0][1]);
+            course.courseName=data.listdata[0][1];
+            course.getFirstLevelItem();
+        }
+    }
+}
+//内容高度自适应
+function setBodyHeightSelfAdaptation()
+{
+    bodyHeight = document.body.clientHeight-$(".topNav").outerHeight(true)-1;
+    $(".bodyContent-left,.bodyContent-right").css("height",bodyHeight);
+    $(".bodyContent-leftmenu").css("height",bodyHeight-90);
+    $("#selectCourseBox").css("max-height",bodyHeight-90);
+    $(window).resize(function (){
+        bodyHeight = document.body.clientHeight-$(".topNav").outerHeight(true)-1;
+        $(".bodyContent-left,.bodyContent-right,.bodyContent").css("height",bodyHeight);
+        $(".bodyContent-leftmenu").css("height",bodyHeight-90);
+        $("#selectCourseBox").css("max-height",bodyHeight-90);
+    });
+}
+//控制滚动条样式
+function setScrollStyle()
+{
+    $("#selectCourseBox,.bodyContent-leftmenu").mCustomScrollbar({
+        theme: "minimal-dark"
+    });
+}
+//左侧菜单栏，绑定按钮点击展开/隐藏子目录
+function setLeftItemClick()
+{
+    $(document).on('click','.bodyContent-leftmenuItem a',function(){
+        if($(this).parent('.bodyContent-leftmenuItem').children('.ztree').css('display')=='none')
+        {
+            $(this).parent('.bodyContent-leftmenuItem').children('.ztree').css('display','block');
+        }
+        else
+        {
+            $(this).parent('.bodyContent-leftmenuItem').children('.ztree').css('display','none');
+        }
+    });
+}
+//顶部导航栏，添加零级目录项滑动及点击效果
+function addFirstItemStyle()
+{
+
+    $(document).on('click','.topnav-title',function(){
+        //var checkedLogo= "/img/"+choose+".png";
+        ////var checkedLogo="/img/earth.png"
+        //$(".topnav-title").removeClass('titleSelected');
+        //$(this).addClass("titleSelected").children("div").children("img").attr("src",checkedLogo);
+
+    });
+    $(document).on('mouseenter','.topnav-title',function(){
+        //$(this).addClass("titleOver");
+    });
+    $(document).on('mouseleave','.topnav-title',function(){
+        $(this).removeClass('titleOver');
+    });
+}
+//滑动显示/隐藏课程选择框
+function setSelectCourseBoxStyle()
+{
+    //$("#selectCourseBtn").html(courseName);
+    /*if(courseName==undefined||courseName==null) {
+        document.getElementById("courseInput").value="课程选择";
+    }else {
+        document.getElementById("courseInput").value=courseName;
+    }*/
+    if(document.getElementById("courseInput").value==""||document.getElementById("navbar-firstList").innerHTML=="") {
+        document.getElementById("courseInput").value="课程选择";
+    }
+}
+
+$(".bodyContent-leftSelectCourse").click(function() {
+    var play=document.getElementById("selectCourseBox").style.display;
+    if(play=="none") {
+        $("#selectCourseBox").css("display","block");
+    }else {
+        $("#selectCourseBox").css("display","none");
+    }
+
+});
+$("#navbar-courseList").mouseleave(function(){
+    $("#navbar-courseList").css("display","none");
+});
+
+//定时刷新iframe高度
+function setIframeInterval(){
+    resetIframe($('#iframepage'));
+    setInterval("resetIframe($('#iframepage'))",1500);
+    //部分教学页面有2个iframe
+    if($("#iframepage2").length>0)
+    {
+        resetIframe($('#iframepage2'));
+        setInterval("resetIframe($('#iframepage2'))",1500);
+    }
+}
+function resetIframe(e)
+{
+    if(e.attr("src"))
+    {
+        e.contents().find("body").css("min-height",bodyHeight-$(".bodyContent-right-topNav").outerHeight()-8);
+        var height=e.contents().find("body").outerHeight();
+        e.css("height",height);
+    }
+    else
+    {e.css("height",0);}
+}
+//显示个人中心
+function showPersonalCenter()
+{
+
+    //平台用戶或管理員，导航栏添加管理中心按钮
+    if(userType==ves.Constant.USER_TYPE.manager||userType==ves.Constant.USER_TYPE.privilege)
+    {
+        x=x+1;
+        var selectedStatus=(itemId=="")?"titleSelected":"";
+        var pageNavigate=new ves.PageNavigation({
+            userType:userType,
+            courseId:courseId,
+            courseName:courseName,
+            courseType:courseType
+        });
+        var manageCenter=pageNavigate.getPath();
+        var	itemString="<li style='margin: 0px 0px;width:"+liWidth+";height: 100%;display: block'>"+
+            "<a onclick=manageCenterFun('"+manageCenter+"') class='topnav-title "+selectedStatus+"' style='height:100%' id='mgrCenter'>"+
+            "<div class='imgContainer icon1' ><img src='/img/mgrCenter.png' class='icon2'/>管理中心</div></a></li>";
+        $("#navbar-firstList").append(itemString);
+        firstLi=itemString;
+        //$("#navbar-firstList").css("display","block");
+    }
+
+
+}
+
+//导航栏右侧头像点击事件1
+$("#userPersonalCenter").click(function(){
+    course.itemName="";
+    course.itemId="";
+    var pageNavigate=new ves.PageNavigation(course.getCourseParamList());
+    //window.location.href=pageNavigate.getPath();
+    $("#page").attr("src",pageNavigate.getPath());
+    if($(".titleSelected").find("img").length!=0) {
+        $(".titleSelected").children("div").children("img").attr("src", $(".titleSelected").find("img")[0].src.slice(0, -11) + ".png");
+        $(".titleSelected").css("color", "black");
+    }
+    $(".topnav-title").removeClass('titleSelected');
+});
+
+function manageCenterFun(url) {
+    if($(".titleSelected").find("img").length!=0) {
+        $(".titleSelected").children("div").children("img").attr("src", $(".titleSelected").find("img")[0].src.slice(0, -11) + ".png");
+        $(".titleSelected").css("color", "black");
+    }
+    $(".topnav-title").removeClass('titleSelected');
+    $("#mgrCenter").css("color","white");
+    $("#mgrCenter").addClass("titleSelected").children("div").children("img").attr("src","/img/mgrCenterchecked.png");
+    //$("#mgrCenter").addClass("titleSelected");
+    //var $img=$("#mgrCenter").addClass("titleSelected").children("div").children("img");
+    //var imgWidth = $img.width();
+    //$img.css("left","-" + imgWidth + "px");
+    //$img.css("filter","drop-shadow(" + imgWidth + "px 0 rgb(255, 255, 255))");
+    $("#page").attr("src",url);
+}

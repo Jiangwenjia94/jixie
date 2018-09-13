@@ -1,0 +1,5 @@
+CONFIG
+ADDRESS=http://192.168.1.101:8087
+TITLE=Ë÷ÈðÍþ¿Æ¼¼£¨Soarway Technology£©
+IP=192.168.1.101
+PORT=8087
