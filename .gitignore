@@ -1,4 +1,5 @@
 /ipch/
 *.suo
 *.sdf
+*.gitignore
 /WebClient_CEF3/cache/

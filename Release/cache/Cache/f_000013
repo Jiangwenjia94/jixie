@@ -1,0 +1,482 @@
+var setting = {
+    view: {
+        addHoverDom: addHoverDom,
+        removeHoverDom: removeHoverDom,
+        selectedMulti: false,
+        dblClickExpand: true,
+    },
+    edit: {
+        drag: {
+            autoExpandTrigger: true,
+            prev: dropPrev,
+            inner: dropInner,
+            next: dropNext
+        },
+        enable: true,
+        showRemoveBtn: showRemoveBtn,
+        showRenameBtn: showRenameBtn,
+        renameTitle: "修改"
+    },
+    data: {
+        simpleData: {
+            enable: true
+        }
+    },
+    callback: {
+        beforeDrag: beforeDrag,
+        beforeDrop: beforeDrop,
+        beforeDragOpen: beforeDragOpen,
+        onDrag: onDrag,
+        onDrop: onDrop,
+        onExpand: onExpand,
+        beforeEditName: beforeEditName,
+        beforeRemove: beforeRemove,
+        beforeRename: beforeRename,
+        onRemove: onRemove,
+        onRename: onRename,
+        onClick: onClick,
+        onNodeCreated: onNodeCreated,
+        //onAsyncSuccess: zTreeOnAsyncSuccess
+    }
+};
+//
+var zNodes;
+function dropPrev(treeId, nodes, targetNode) {
+    var pNode = targetNode.getParentNode();
+    if (pNode && pNode.dropInner === false) {
+        return false;
+    } else {
+        for (var i = 0, l = curDragNodes.length; i < l; i++) {
+            var curPNode = curDragNodes[i].getParentNode();
+            if (curPNode && curPNode !== targetNode.getParentNode() && curPNode.childOuter === false) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+function dropInner(treeId, nodes, targetNode) {
+    if (targetNode && targetNode.dropInner === false) {
+        return false;
+    } else {
+        for (var i = 0, l = curDragNodes.length; i < l; i++) {
+            if (!targetNode && curDragNodes[i].dropRoot === false) {
+                return false;
+            } else if (curDragNodes[i].parentTId && curDragNodes[i].getParentNode() !== targetNode && curDragNodes[i].getParentNode().childOuter === false) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+function dropNext(treeId, nodes, targetNode) {
+    var pNode = targetNode.getParentNode();
+    if (pNode && pNode.dropInner === false) {
+        return false;
+    } else {
+        for (var i = 0, l = curDragNodes.length; i < l; i++) {
+            var curPNode = curDragNodes[i].getParentNode();
+            if (curPNode && curPNode !== targetNode.getParentNode() && curPNode.childOuter === false) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+var log, className = "dark", curDragNodes, autoExpandNode;
+function beforeDrag(treeId, treeNodes) {
+    className = (className === "dark" ? "" : "dark");
+    for (var i = 0, l = treeNodes.length; i < l; i++) {
+        if (treeNodes[i].drag === false) {
+            curDragNodes = null;
+            return false;
+        } else if (treeNodes[i].parentTId && treeNodes[i].getParentNode().childDrag === false) {
+            curDragNodes = null;
+            return false;
+        }
+    }
+    curDragNodes = treeNodes;
+    return true;
+}
+function beforeDragOpen(treeId, treeNode) {
+    autoExpandNode = treeNode;
+    return true;
+}
+function beforeDrop(treeId, treeNodes, targetNode, moveType, isCopy) {
+    className = (className === "dark" ? "" : "dark");
+    if (!targetNode.getParentNode() || targetNode.getParentNode().id == parentId) {
+        alert("在同一级别目录下移动！");
+        return false;
+    }
+    return true;
+}
+function onDrag(event, treeId, treeNodes) {
+    className = (className === "dark" ? "" : "dark");
+}
+function onDrop(event, treeId, treeNodes, targetNode, moveType, isCopy) {
+    className = (className === "dark" ? "" : "dark");
+    if (treeNodes[0].getParentNode() == null || treeNodes[0].getParentNode().id == parentId) {
+        alert("不能这样移动条目!请刷新重试");
+        return false;
+    }
+    var moveNode =
+    {
+        "puciId": treeNodes[0].id,
+        "parentId": treeNodes[0].getParentNode().id,
+        "prevId": (treeNodes[0].getPreNode() == null) ? null : treeNodes[0].getPreNode().id,
+        "nextId": (treeNodes[0].getNextNode() == null) ? null : treeNodes[0].getNextNode().id
+    }
+    var res = $.post("/Items-manager-action!moveItem",
+        moveNode,
+        function (data) //回调函数
+        {
+            if (data == "0") {
+                alert("移动失败！");
+            }
+        }, "json"
+    ).error(function () {
+            alert("暂时无法连接到服务器！\n" + "可能是以下原因：\n" + "网络故障\n" + "您的账号已在其他地方登录\n" + "服务器关闭\n");
+        });
+    //alert(treeNodes[0].name+" , "+treeNodes[0].getParentNode().id+" , prev"+treeNodes[0].getPreNode().name);
+    //alert(treeNodes.length + "," + (targetNode ? (targetNode.tId + ", " + targetNode.name) : "isRoot" ));
+    // alert(moveType+"节点id： "+targetNode.id+"名字: "+targetNode.name+"父节点: "+targetNode.getParentNode().id+" 上一个节点名称: "+targetNode.getPreNode().name);
+}
+function onExpand(event, treeId, treeNode) {
+    if (treeNode === autoExpandNode) {
+        className = (className === "dark" ? "" : "dark");
+    }
+    else {
+        //alert('here');
+    }
+}
+function getTime() {
+    var now = new Date(),
+        h = now.getHours(),
+        m = now.getMinutes(),
+        s = now.getSeconds(),
+        ms = now.getMilliseconds();
+    return (h + ":" + m + ":" + s + " " + ms);
+}
+function setTrigger() {
+    var zTree = $.fn.zTree.getZTreeObj("tree-catalog");
+    zTree.setting.edit.drag.autoExpandTrigger = $("#callbackTrigger").attr("checked");
+}
+function beforeEditName(treeId, treeNode) {
+    className = (className === "dark" ? "" : "dark");
+    var zTree = $.fn.zTree.getZTreeObj("tree-catalog");
+    zTree.selectNode(treeNode);
+    return true;//confirm("进入节点 -- " + treeNode.name + " 的编辑状态吗？");
+}
+function beforeRemove(treeId, treeNode) {
+    className = (className === "dark" ? "" : "dark");
+    var zTree = $.fn.zTree.getZTreeObj("tree-catalog");
+    zTree.selectNode(treeNode);
+    //return confirm("确认删除 节点 -- " + treeNode.name + " 吗？");
+    confirm("确认删除 节点 -- " + treeNode.name + " 吗？", function () {
+        var removeNode = {
+            "puciId": treeNode.id
+        }
+        var res = $.post("/Items-manager-action!deleteItemsById",
+            removeNode,
+            function (data) //回调函数
+            {
+                if (data == "0") {
+                    alert("删除失败！");
+                } else {
+                    //$("#"+treeNode.tId).remove();
+                    //alert("删除成功");
+                    parent.loadContent();
+                    var treeObj = $.fn.zTree.getZTreeObj("tree-catalog");
+                    treeObj.removeNode(treeNode);
+                    //refreshParentNode(treeId);
+                }
+            }, "json"
+        ).error(function () {
+                alert("暂时无法连接到服务器！\n" + "可能是以下原因：\n" + "网络故障\n" + "您的账号已在其他地方登录\n" + "服务器关闭\n");
+            });
+        return true;
+    }, function () {
+        return false;
+    });
+    return false;
+}
+function onRemove(e, treeId, treeNode) {
+    var bool = confirm("确认删除 节点 -- " + treeNode.name + " 吗？");
+    if (bool) {
+        return true;
+    }
+    else {
+        return false;
+    }
+    /*var removeNode = {
+     "puciId": treeNode.id
+     }
+     var res = $.post("/Items-manager-action!deleteItemsById",
+     removeNode,
+     function (data) //回调函数
+     {
+     if (data == "0") {
+     alert("删除失败！");
+     }
+     }, "json"
+     ).error(function () {
+     alert("暂时无法连接到服务器！\n" + "可能是以下原因：\n" + "网络故障\n" + "您的账号已在其他地方登录\n" + "服务器关闭\n");
+     });*/
+    //alert(treeNode.id + ", " + treeNode.name);
+    //refreshParentNode(treeId);
+}
+
+//刷新选中节点的父节点
+function refreshParentNode() {
+    var zTree = $.fn.zTree.getZTreeObj("tree-catalog");
+        zTree.reAsyncChildNodes(null, "refresh");
+    //    type = "refresh",
+    //    silent = false,
+    //    nodes = zTree.getSelectedNodes();
+    ///*根据 zTree 的唯一标识 tId 快速获取节点 JSON 数据对象*/
+    //var parentNode = zTree.getNodeByTId(nodes[0].parentTId);
+    ///*选中指定节点*/
+    //zTree.selectNode(parentNode);
+    //zTree.reAsyncChildNodes(parentNode, type, silent);
+
+    //var zTree = $.fn.zTree.getZTreeObj("tree-catalog"),
+    ///*根据 treeId 获取 zTree 对象*/
+    // type = "refresh",
+    //    silent = false,
+    //    nodes = zTree.getSelectedNodes();
+    ///*根据 zTree 的唯一标识 tId 快速获取节点 JSON 数据对象*/
+    //var parentNode = zTree.getNodeByTId(nodes[0].parentTId);
+    ///*选中指定节点*/
+    //zTree.selectNode(parentNode);
+    //zTree.reAsyncChildNodes(parentNode, type, silent);
+    //refreshParentNode(parentNode);
+}
+function beforeRename(treeId, treeNode, newName, isCancel) {
+    className = (className === "dark" ? "" : "dark");
+    if (newName.length == 0) {
+        alert("节点名称不能为空.");
+        var zTree = $.fn.zTree.getZTreeObj("");
+        setTimeout(function () {
+            zTree.editName(treeNode)
+        }, 10);
+        return false;
+    }
+    return true;
+}
+function onRename(e, treeId, treeNode, isCancel) {
+    var renameNode = {
+        "puciId": treeNode.id,
+        "itemName": treeNode.name,
+        "display": 0
+    }
+    var res = $.post("/Items-manager-action!updateItem",
+        renameNode,
+        function (data) //回调函数
+        {
+            if (data == "0") {
+                alert("重命名失败！");
+            }
+        }, "json"
+    ).error(function () {
+            alert("暂时无法连接到服务器！\n" + "可能是以下原因：\n" + "网络故障\n" + "您的账号已在其他地方登录\n" + "服务器关闭\n");
+        });
+}
+function onNodeCreated(event, treeId, treeNode) {
+    //alert(treeNode.tId + ", " + treeNode.name);
+};
+function showRemoveBtn(treeId, treeNode) {
+    return (treeNode.id != parentId);
+}
+function showRenameBtn(treeId, treeNode) {
+    return (treeNode.id != parentId);
+}
+function getTime() {
+    var now = new Date(),
+        h = now.getHours(),
+        m = now.getMinutes(),
+        s = now.getSeconds(),
+        ms = now.getMilliseconds();
+    return (h + ":" + m + ":" + s + " " + ms);
+}
+var newCount = 1;
+//添加新节点
+function addHoverDom(treeId, treeNode) {
+    var sObj = $("#" + treeNode.tId + "_span");
+    if (treeNode.editNameFlag || $("#addBtn_" + treeNode.tId).length > 0) return;
+    var addStr = "<span class='button add' id='addBtn_" + treeNode.tId
+        + "' title='新增' onfocus='this.blur();'></span>";
+    sObj.after(addStr);
+    var btn = $("#addBtn_" + treeNode.tId);
+    if (btn) btn.bind("click", function () {
+        var zTree = $.fn.zTree.getZTreeObj("tree-catalog");
+        var addNode = {
+            "parentId": treeNode.id,
+            "itemName": "新条目",
+            "courseId": courseId,
+            "majId": majId,
+            "display": 1
+        }
+        var res = $.post("/Items-manager-action!addItemByParentId",
+            addNode,
+            function (data) //回调函数
+            {
+                //alert(data);
+                zTree.addNodes(treeNode, {id: data, pId: treeNode.id, name: "新条目"});
+                parent.loadContent();
+            }, "json"
+        ).error(function () {
+                alert("暂时无法连接到服务器！\n" + "可能是以下原因：\n" + "网络故障\n" + "您的账号已在其他地方登录\n" + "服务器关闭\n");
+            });
+        return false;
+    });
+};
+function removeHoverDom(treeId, treeNode) {
+    $("#addBtn_" + treeNode.tId).unbind().remove();
+};
+function selectAll() {
+    var zTree = $.fn.zTree.getZTreeObj("tree-catalog");
+}
+function onClick(event, treeId, treeNode, clickFlag) {
+
+    if (treeNode.id == parentId) {
+        //alert('here');
+        $("#editcatalog-name").val("");
+        $("#editcatalog-id").html("");
+        $("#editcatalog-info").html();
+        $("#editcatalog-itemLogo").attr("src", "/img/training/setting.png");
+        //$("#editcatalog-display").children("option:selected").attr("display");
+        return;
+    }
+    //alert(treeNode.id + ", " + treeNode.name);
+    $("#editcatalog-name").val(treeNode.name);
+    $("#editcatalog-display").children("option:selected").attr("display");
+    //$("#editcatalog-display").val(treeNode.display);
+
+
+    var pid = treeNode.pId;
+
+    //显示图标的图片
+    var treeNodeID=treeNode.id;//节点id
+    //去tea_pu_courseitem里面找到图片的路径
+    var addNode = {
+        "puciId": treeNodeID,
+    }
+    var res = $.post("/Items-manager-action!getItemById",
+        addNode,
+        function (data) //回调函数
+        {
+            var logoPath = data.logoPath;
+            if(logoPath==undefined)
+            {
+                logoPath="/img/training/setting.png";
+            }
+            $("#editcatalog-itemLogo").attr("src", logoPath);
+        }, "json"
+    ).error(function () {
+            alert("暂时无法连接到服务器！\n" + "可能是以下原因：\n" + "网络故障\n" + "您的账号已在其他地方登录\n" + "服务器关闭\n");
+        });
+
+    //显示是否编辑
+    $("#editcatalog-id").html(treeNode.id);
+    $("#editcatalog-info").html();
+    //alert($("[itemId='"+treeNode.id+"']").children("img").attr("src"));
+    var selectedItem = $("[itemId='" + treeNode.id + "']", window.parent.document);
+    if (selectedItem.length > 0) {
+        var children1 = selectedItem.children("img");
+        var display = children1.attr("displaydata");
+        if (display == "1") {
+            $("#editcatalog-display").val("1");
+        } else {
+            $("#editcatalog-display").val("0");
+        }
+        $("#editcatalog-itemLogo").attr("src", children.attr("src"));
+    }
+    else {
+        $("#editcatalog-display").val("0");
+        $("#editcatalog-itemLogo").attr("src", "");
+    }
+
+}
+
+//var firstAsyncSuccessFlag = 0;
+//function zTreeOnAsyncSuccess(event, treeId, msg) {
+//    if (firstAsyncSuccessFlag == 0) {
+//        try {
+//            var zTree = $.fn.zTree.getZTreeObj("tree-catalog");
+//            var tid=parent.selectedItemNode.tId;
+//            var nodeSelected=zTree.getNodeByParam("tId",tid,null);
+//            zTree.expandNode(nodeSelected, true);
+//
+//            var childNodes = zTree.transformToArray(nodeSelected);
+//            zTree.expandNode(childNodes[1], true);
+//            zTree.selectNode(childNodes[1]);
+//            var childNodes1 = zTree.transformToArray(childNodes[1]);
+//            zTree.checkNode(childNodes1[1], true, true);
+//            firstAsyncSuccessFlag = 1;
+//        } catch (err) {
+//
+//        }
+//
+//    }
+//}
+
+/**************************/
+var courseId;
+var parentId;
+var majId;
+
+$(document).ready(function () {
+    courseId = window.parent.courseId;
+    parentId = window.parent.itemId;//getQueryString("parentId")?getQueryString("parentId"):-1;
+    if (window.parent.course == null || window.parent.course == undefined) {
+        majId = 0;
+    } else {
+        majId = (window.parent.course.majId == "" ? 0 : window.parent.majId);
+    }
+    //majId=(window.parent.course.majId==""?0:window.parent.majId);
+    var courseParam = {
+        "courseId": courseId,
+        "parentId": parentId
+    }
+    var res = $.post("/Items-manager-action!findAllItemsByCourseId",
+        courseParam,
+        function (data) //回调函数
+        {
+            var parentContent = {
+                "id": parentId,
+                "pId": 0,
+                "name": '目录',
+                //"logoPath":'/img/training/setting.png'
+            }
+            if (data[0].list) {
+                data[0].list.push(parentContent);
+                zNodes = data[0].list;
+            }
+            else {
+                zNodes = parentContent;
+            }
+            $.fn.zTree.init($("#tree-catalog"), setting, zNodes);
+            var treeObj = $.fn.zTree.getZTreeObj("tree-catalog");
+            if (parent.selectedItemNode != undefined) {
+                var parentNodeTid = parent.selectedItemNode.getParentNode().tId;
+                //var parentNode=parent.selectedItemNode.getParentNode();
+                var parentNode = treeObj.getNodeByParam("tId", parentNodeTid, null);
+                treeObj.expandNode(parentNode);
+            }
+
+        }, "json"
+    ).error(function () {
+            alert("error");
+        });
+});
+
+function expandAllNode(node, treeObj) {
+    var tid = node.tId;
+    var node = treeObj.getNodeByParam("tId", tid, null);
+    treeObj.expandNode(node);
+    var parentNode = node.getParentNode();
+    expandAllNode(parentNode, treeObj);
+    //if(parentNode){
+    //    expandAllNode(parentNode,treeObj);
+    //}
+}

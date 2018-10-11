@@ -1,0 +1,426 @@
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <link rel="stylesheet" href="http://127.0.0.1:8080/css/basicStyle.css">
+
+</head>
+<style>
+    #swfPlayerz {
+        position: relative;
+    }
+
+    #wuhandaxueicon {
+        width: 80px;
+        height: 80px;
+        position: absolute;
+        top: 5px;
+        display: none;
+    }
+
+    #wuhandaxueicon img {
+        width: 80px;
+        height: 80px;
+        opacity: 0.4;
+        border-radius: 50%;
+    }
+</style>
+<body>
+<div class="basicContentTemplate">
+    
+
+
+<link href="http://127.0.0.1:8080/css/bootstrap.css" rel="stylesheet"/>
+
+<script src="http://127.0.0.1:8080/js/jquery-2.1.1.min.js"></script>
+<script src="http://127.0.0.1:8080/js/bootstrap.min.js"></script>
+<link href="http://127.0.0.1:8080/css/courseTemplate/template.css" rel="stylesheet"/>
+<script src="http://127.0.0.1:8080/js/constant.js"></script>
+<div style="height: 10px"></div>
+<script>
+    var basepath = "http://127.0.0.1:8080/";
+    /**
+     * Created by Administrator on 2016/1/7.
+     */
+//获取URL传参
+    function getQueryString(name) {
+        var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+        var r = window.location.search.substr(1).match(reg);
+        if (r != null) return unescape(r[2]);
+        return null;
+    }
+    var itemId;
+    var courseId;
+    var modelId;
+    var iframeHeight;
+    $(document).ready(function () {
+        itemId = getQueryString("leaveId");
+        courseId = getQueryString("courseId");
+//        iframeHeight = window.parent.bodyHeight - $(".bodyContent-right-topNav", window.parent.document).outerHeight() - 20;
+        iframeHeight=parseInt($(".basicContentTemplate").eq(0).css("height"))-$("#topList").outerHeight()-20;
+        //templateType=$("#templateType").val();
+        //getItemContent();
+    });
+
+    $(document).ready(function () {
+        $.ajax({
+            url: '/organizemgr/showCollegeInforAction!getMark',
+            type: 'POST',
+            async: false,
+            dataType: 'json',
+            data: {"courseId": courseId},
+            success: function (data) {
+                console.log(data);
+//                alert(JSON.stringify(data[0].list));
+                $("#mark").attr('src', data[0].list);
+            },
+            error: function (data) {
+                alert("获取水印失败!");
+            }
+        });
+    });
+
+
+    function getWatermark() {
+
+        $.ajax({
+            url: basepath + "/orgManagerAction!getCollegeByColId",
+            type: 'POST',
+            async: false,
+            dataType: 'json',
+            data: {"collegeId": collegeID},
+            success: function (result) {
+               showWatermark(result);
+            },
+            error: function (result) {
+                alert("获取内容失败!");
+            }
+        });
+    }
+
+    function getItemContent() {
+
+        $.ajax({
+            url: basepath + "/Items-content-manager!getItemContent",
+            type: 'POST',
+            async: false,
+            dataType: 'json',
+            data: {"itemId": itemId},
+            success: function (result) {
+                showItemContent(result);
+            },
+            error: function (result) {
+                alert("获取内容失败!");
+            }
+        });
+
+//    var param = {
+//      "itemId":itemId
+//    }
+//    var res = $.post(basepath+"/Items-content-manager!getItemContent",
+//            param,
+//            function(data) //回调函数
+//            {
+//              showItemContent(data);
+//              //ue.setContent(data[0].item.content);
+//            }, "json"
+//    ).error(function() {alert("暂时无法连接到服务器！\n"+"可能是以下原因：\n"+"网络故障\n"+"您的账号已在其他地方登录\n"+"服务器关闭\n");});
+    }
+    function getAttachmentList(attachType) {
+        var param = {
+            "courseId": courseId,
+            "attachType": attachType
+        }
+        var res = $.post(basepath + "/Items-content-manager!getCourseAttachList",
+                param,
+                function (data) //回调函数
+                {
+                    showAttachmentList(data);
+                }, "json"
+        ).error(function () {
+                    alert("暂时无法连接到服务器！\n" + "可能是以下原因：\n" + "网络故障\n" + "您的账号已在其他地方登录\n" + "服务器关闭\n");
+                });
+    }
+
+    function setItemContent(content) {
+        var param = {
+            "itemId": itemId,
+            "content": content
+        }
+        var res = $.post(basepath + "/Items-content-manager!saveContent",
+                param,
+                function (data) //回调函数
+                {
+                    if (data == "1") {
+                        alert("保存成功!");
+                    }
+                }, "json"
+        ).error(function () {
+                    alert("暂时无法连接到服务器！\n" + "可能是以下原因：\n" + "网络故障\n" + "您的账号已在其他地方登录\n" + "服务器关闭\n");
+                });
+    }
+    function setAttachmentContent(newId) {
+        var param = {
+            "itemId": itemId,
+            "oldAttId": modelId,
+            "newAttId": newId
+        }
+        var res = $.post(basepath + "/Items-content-manager!changeItemAttachment",
+                param,
+                function (data) //回调函数
+                {
+                    //alert(JSON.stringify(data));
+                    if (data[0].result == "1") {
+                        modelId = newId;
+                    }
+                }, "json"
+        ).error(function () {
+                    alert("暂时无法连接到服务器！\n" + "可能是以下原因：\n" + "网络故障\n" + "您的账号已在其他地方登录\n" + "服务器关闭\n");
+                });
+    }
+</script>
+<script src="http://127.0.0.1:8080/js/modalCommon.js"></script>
+    <div id="topList" class="container" style="width: 100%">
+        <div class="col-md-8">
+            <div id="queue"></div>
+            <input type="text" id="modelName" placeholder="swf名称"
+                   style="border-radius: 6px;border:1px solid #CCCCCC;padding: 2px;margin-bottom: 15px;"/>
+            <input type="file" name="uploadify" id="uploadify"/>
+        </div>
+
+        <div style="float: right">
+            <select id="attachSelList" class="form-control">
+                <option disabled="disabled" selected>选择SWF</option>
+            </select>
+        </div>
+    </div>
+    <div style="margin:auto;width: 90%;height:90%" id="swfPlayerz">
+        
+        <p id="fullScreen"
+           style="font-size: 20px;color: blue;position: absolute;margin:auto;opacity: 0.5;left: 0; right: 0"
+           onclick="requestFullScreen(document.getElementById('swfPlayerz'))"><span id="fullScreen1" class="glyphicon glyphicon-fullscreen" style="left: 95%;display:none"></span>&nbsp;</p>
+
+        <p id="myExitFullScreen"
+           style="font-size: 30px;color: blue;position: absolute;margin:auto;opacity: 0.5;left: 0; right: 0;display: none"
+           onclick="keydown()"><span id="myExitFullScreen1" class="glyphicon glyphicon-resize-small" style="left: 95%;display:none"></span>&nbsp;</p>
+        <object type="application/x-shockwave-flash" class="media {width:100%, height:200}" id="swfPlayer"></object>
+        <div id="wuhandaxueicon"><img id=mark src="" alt=""/></div>
+    </div>
+</div>
+<link rel="stylesheet" type="text/css" href="http://127.0.0.1:8080/js/upload/uploadify.css"/>
+<script src="http://127.0.0.1:8080/js/upload/jquery.uploadify.js"></script>
+<script type="text/javascript" src="http://127.0.0.1:8080/js/jquery.media.js"></script>
+</body>
+
+<script>
+    var showSrc = "";
+    $(document).ready(function () {
+        $("#swfPlayer").replaceWith("<object class='media' id='swfPlayer'type='application/x-shockwave-flash' style='margin: auto;display: block'></boject>");
+        if ($("#swfPlayerz").height() / 9 * 16 < $("#swfPlayerz").width()) {
+            $("#swfPlayer").css("height", $("#swfPlayerz").css("height"));
+            $("#swfPlayer").width($("#swfPlayer").height() / 9 * 16);
+        }
+        else {
+            $("#swfPlayer").css("width", $("#swfPlayerz").css("width"));
+            $("#swfPlayer").height($("#swfPlayer").width() / 16 * 9);
+        }
+        //全屏图标位置调整
+        $("#fullScreen").width($("#swfPlayer").width());
+        $("#fullScreen").css("top",$("#swfPlayer").height()-$("#fullScreen").height()-10);
+        $("#myExitFullScreen").width(window.outerWidth);
+        $("#myExitFullScreen").css("top",window.outerHeight-$("#myExitFullScreen").height());
+
+        $("#fullScreen").mouseenter(function(){
+            $("#fullScreen1").show();
+        });
+        $("#fullScreen").mouseleave(function(){
+            $("#fullScreen1").hide();
+        });
+        $("#myExitFullScreen").mouseenter(function(){
+            $("#myExitFullScreen1").show();
+        });
+        $("#myExitFullScreen").mouseleave(function(){
+            $("#myExitFullScreen1").hide();
+        });
+        $("#wuhandaxueicon").css("right", ($('#swfPlayerz').width() - $('#swfPlayer').width()) / 2 +10+ 'px');
+        $("#uploadify").uploadify({
+            'fileObjName': 'uploadify',  //<input type="file"/>的name
+            'debug': false, //开启调试
+            'auto': true, //是否自动上传
+            'swf': '../../js/upload/uploadify.swf',  //引入uploadify.swf
+            'uploader': '/upload/file-upload-action',//请求路径
+            'queueID': 'queue',//队列id,用来展示上传进度的
+            'width': '75',  //按钮宽度
+            'height': '24',  //按钮高度
+            'queueSizeLimit': 3,  //同时上传文件的个数
+            'multi': false,  //允许多文件上传
+            'buttonText': '上传swf',//按钮上的文字
+            'fileSizeLimit': '1024MB', //设置单个文件大小限制
+            'method': 'post',
+            'removeCompleted': true,//上传完成后自动删除队列
+            'fileTypeExts': '*.swf;',
+            'onUploadStart': function (file) {
+
+                $("#uploadify").uploadify("settings", "formData", {
+                    'uploadType': ATTACH_TYPE.FILE_COURSE_SWF,
+                    'itemId': itemId,
+                    'attachName': $("#modelName").val()
+                });
+            },
+
+            'onFallback': function () {
+                alert("您未安装FLASH控件，无法上传图片！请安装FLASH控件后再试.");
+            },
+            'onUploadSuccess': function (file, data, response) {//单个文件上传成功触发
+                //data就是action中返回来的数据
+                //  alert(data);
+
+                modelId = JSON.parse(data)[0].attId;
+                $("#swfPlayer").attr("data", showSrc + JSON.parse(data)[0].relativePath);
+                $('a.media').media();
+                getAttachmentList(ATTACH_TYPE.FILE_COURSE_SWF);
+                document.getElementById("wuhandaxueicon").style.display = "block";
+            }, 'onQueueComplete': function () {//所有文件上传完成
+                alert("文件上传成功!");
+            }
+        });
+        $("#attachSelList").change(function () {
+//      $("#swfPlayer").attr("href",showSrc+$("#attachSelList option:selected").attr("modelPath"));
+            $("#swfPlayer").attr("data", showSrc + $("#attachSelList option:selected").attr("modelPath"));
+            $('a.media').media();
+            setAttachmentContent($("#attachSelList option:selected").val());
+            document.getElementById("wuhandaxueicon").style.display = "block";
+        });
+//    getWatermark();
+        getItemContent();
+        getAttachmentList(ATTACH_TYPE.FILE_COURSE_SWF);
+    });
+    function showWatermark(data) {
+        alert(JSON.stringify(data));
+    }
+
+    function showItemContent(data) {
+        //  alert(JSON.stringify(data));
+        if (data[0].result == "1") {
+            $.each(data[0].attachments, function (i, item) {
+                if (item[3] == ATTACH_TYPE.FILE_COURSE_SWF) {
+                    modelId = item[0];
+                    document.getElementById("wuhandaxueicon").style.display = "block";
+                    $("#swfPlayer").attr("data", showSrc + item[2]);
+                    $('a.media').media();
+                    return false;
+                }
+            });
+        }
+    }
+    function showAttachmentList(data) {
+        if (data[0].result == "1") {
+            $("#attachSelList").html("<option disabled='disabled' selected>选择SWF</option>");
+            $.each(data[0].list, function (i, item) {
+                $("#attachSelList").append("<option value='" + item[0] + "' modelPath='" + item[2] + "'>" + item[1] + "</option>");
+//                document.getElementById("wuhandaxueicon").style.display = "block";
+
+            });
+        }
+    }
+    var myVar;//定时器变量，用于播放器全屏时高度和宽度的改变；用定时器是因为将高度和宽度的改变直接写到代码里改变无效，原因暂时未知
+
+    //用于存储播放器原来大小，全屏退出时恢复
+    var wzHeight;
+    var wzWidth;
+
+    //全屏方法
+    function requestFullScreen(element) {
+        // 判断各种浏览器，找到正确的方法
+        var requestMethod = element.requestFullScreen || //W3C
+                element.webkitRequestFullScreen || //Chrome等
+                element.mozRequestFullScreen || //FireFox
+                element.msRequestFullScreen; //IE11
+
+        if (requestMethod) {
+            requestMethod.call(element);
+        }
+        else if (typeof window.ActiveXObject !== "undefined") {//for Internet Explorer
+            var wscript = new ActiveXObject("WScript.Shell");
+            if (wscript !== null) {
+                wscript.SendKeys("{F11}");
+            }
+        }
+//        document.addEventListener("dblclick", keydown);
+
+        $("#fullScreen").hide();
+        $("#myExitFullScreen").show();
+
+        //存储播放器原来大小，设置定时器
+        wzHeight = $("#swfPlayerz").css("height");
+        wzWidth = $("#swfPlayerz").css("width");
+        myVar = setInterval(function () {
+            myTimer()
+        }, 200);
+    }
+
+    //键盘监听函数，当按下Esc键（ASC码 27）退出全屏，清除定时器，恢复播放器原来大小；网页Esc自动有效，此处是为了客户端Esc退出全屏；
+    // 网页Esc退出不会触发此函数，因此网页退出全屏播放器大小不会恢复，以后有时间再改
+    //    document.addEventListener("keydown", keydown);
+
+    //由于客户电脑没有键盘，暂时改为监听双击事件，函数名未改；
+    //第三次更改，全屏改为图标进入退出，取消双击
+    function keydown(event) {
+//    if (event.keyCode == 27) {
+        exitFull();
+        window.clearInterval(myVar);
+        $("#swfPlayerz").css("height", wzHeight);
+        $("#swfPlayerz").css("width", wzWidth);
+        if ($("#swfPlayerz").height() / 9 * 16 < $("#swfPlayerz").width()) {
+            $("#swfPlayer").css("height", $("#swfPlayerz").css("height"));
+            $("#swfPlayer").width($("#swfPlayer").height() / 9 * 16);
+        }
+        else {
+            $("#swfPlayer").css("width", $("#swfPlayerz").css("width"));
+            $("#swfPlayer").height($("#swfPlayer").width() / 16 * 9);
+        }
+        $("#wuhandaxueicon").css("top", '5px');
+        $("#wuhandaxueicon").css("right", ($('#swfPlayerz').width() - $('#swfPlayer').width()) / 2+ 10 + 'px');
+        $("#fullScreen").show();
+        $("#myExitFullScreen").hide();
+//    }
+    }
+
+    function myTimer() {
+        $("#swfPlayer").css("width", window.outerWidth);
+        $("#swfPlayer").css("height", window.outerHeight);
+        $("#swfPlayerz").css("width", window.outerWidth);
+        $("#swfPlayerz").css("height", window.outerHeight);
+        if (window.outerWidth / window.outerHeight > 16.0 / 9) {
+            $("#wuhandaxueicon").css("right", (window.outerWidth - window.outerHeight / 9 * 16) / 2);
+        }
+        else {
+            $("#wuhandaxueicon").css("top", (window.outerHeight - window.outerWidth / 16 * 9) / 2);
+        }
+    }
+
+    //退出全屏方法
+    function exitFull() {
+        // 判断各种浏览器，找到正确的方法
+        var exitMethod = document.exitFullscreen || //W3C
+                document.mozCancelFullScreen || //Chrome等
+                document.webkitExitFullscreen || //FireFox
+                document.webkitExitFullscreen; //IE11
+        if (exitMethod) {
+            exitMethod.call(document);
+        }
+        else if (typeof window.ActiveXObject !== "undefined") {//for Internet Explorer
+            var wscript = new ActiveXObject("WScript.Shell");
+            if (wscript !== null) {
+                wscript.SendKeys("{F11}");
+            }
+        }
+//        document.removeEventListener("dblclick", keydown);
+    }
+
+</script>
+<script src="http://127.0.0.1:8080/js/modalCommon.js"></script>
+</html>

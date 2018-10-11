@@ -166,10 +166,22 @@ void ClientHandler::OnBeforeContextMenu(CefRefPtr<CefBrowser> browser,
 			model->AddSeparator();
 			model->Clear();
 		// Add DevTools items to all context menus.
+		
 		model->AddItem(10, L"Ä¬ÈÏ²¼¾Ö");
 		model->AddItem(11, L"Ë¢ÐÂ");
+		
 		// Test context menu features.
 		//BuildTestMenu(model);
+	}
+	if (params->GetTypeFlags() & CM_TYPEFLAG_EDITABLE)
+	{//±à¼­¿òµÄÓÒ¼üÏûÏ¢		
+		if (model->GetCount() > 0)
+			model->AddSeparator();
+		model->Clear();
+		model->AddItem(12, L"¼ôÇÐ");
+		model->AddItem(13, L"¸´ÖÆ");
+		model->AddItem(14, L"Õ³Ìù");
+		model->AddItem(15, L"É¾³ý");
 	}
 
 	//	if (delegate_)
@@ -190,6 +202,26 @@ bool ClientHandler::OnContextMenuCommand(CefRefPtr<CefBrowser> browser,
 	if (command_id == 11)
 	{
 		browser->Reload();
+		return true;
+	}
+	if (command_id == 12)
+	{
+		frame->Cut();
+		return true;
+	}
+	if (command_id == 13)
+	{
+		frame->Copy();
+		return true;
+	}
+	if (command_id == 14)
+	{
+		frame->Paste();
+		return true;
+	}
+	if (command_id == 15)
+	{
+		frame->Delete();
 		return true;
 	}
 	return false;

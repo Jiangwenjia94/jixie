@@ -36,7 +36,7 @@ public:
 
 	bool is_playing;//是否已打开播放smg、unity的播放窗口
 	bool is_login;//是否是登陆界面，用于分辨率改变时的判断
-
+	string conf[6];
 	STARTUPINFO infoStart;//子进程窗口参数
 	PROCESS_INFORMATION infoProcess;
 //	bool fullscreenclr;
@@ -74,4 +74,7 @@ public:
 //	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 	afx_msg void OnWinIniChange(LPCTSTR lpszSection);
+//	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+//	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+//	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 };

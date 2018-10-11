@@ -34,7 +34,6 @@ END_MESSAGE_MAP()
 
 // IpDlg 消息处理程序
 
-
 void IpDlg::OnBnClickedOk()
 {
 	// TODO:  在此添加控件通知处理程序代码

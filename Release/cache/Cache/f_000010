@@ -1,0 +1,524 @@
+/**
+ * Created by Administrator on 2016/1/20.
+ */
+var selectedItemId="";//当前选中的目录ID
+var selSecondItemId="";//当前选中的一级目录ID
+var isEdit=false;
+var teachSetting = {
+    data: {
+        simpleData: {
+            enable: true
+        }
+    },
+    callback: {
+        onClick: onTeachClick
+    }
+};
+
+$(document).ready(function() {
+    var param = {
+        "courseId": courseId
+    }
+    var res = $.post("/Items-manager-action!getFirstLevelItems",
+        param,
+        function (data) //回调函数
+        {
+            loadContent(data[0]);
+        }, "json"
+    )
+});
+
+function onTeachClick(event, treeId, treeNode,clickFlag)
+{
+    ves.triggerDom("itemId",treeNode.id,"click");
+}
+
+function loadContent(courseList)
+{
+    if(!itemId)//如果没有默认的itemId，则选取零级目录中对应的第一项来显示
+    {
+        $.each(courseList.list, function (i, item0) {
+            if (_isContain(item0.item.name,ITEM_TYPE.teach)) {
+                itemId=item0.item.puciId;
+                return false;
+            }else
+            {return true;}
+        });
+    }
+    var param = {
+        "courseId":courseId,
+        "parentId":itemId,
+        "usertype":usertype,
+    }
+    var res = $.post("/Items-manager-action!findAllFormedItemsByCourseId",
+        param,
+        function(data) //回调函数
+        {// alert(JSON.stringify(data));
+            //itemList=data[0];
+            getLeftMenu(itemId,data[0]);
+        }, "json"
+    ).error(function() {alert("暂时无法连接到服务器！\n"+"可能是以下原因：\n"+"网络故障\n"+"您的账号已在其他地方登录\n"+"服务器关闭\n");});
+    //为显示的零级目录项添加选中样式
+    $(".topnav-title").removeClass('titleSelected');
+    $("#topNav"+itemId).addClass("titleSelected");
+}
+//动态加载左侧分页栏
+function getLeftMenu(index,itemList)
+{
+    if(itemList.list==null)
+    { return;}
+    //$(".bodyContent-leftmenuTab").html("<button class='btn btn-default pull-right' id='hideLeftContent'>-</button>");
+    $(".bodyContent-leftmenuTab").html("");
+    $(".bodyContent-leftmenuTabcontent").html("");
+
+    var len=itemList.list.length;
+
+    $.each(itemList.list, function (i, item0) {
+        if(i==0)
+        {
+            selSecondItemId=item0.item.puciId;
+            $(".bodyContent-leftmenuTab").append("<li class='active'><a href='#"+item0.item.puciId+"' onclick=setSecondItemId('"+item0.item.puciId+"') data-toggle='tab' title="+item0.item.name+"><nobr>"+item0.item.name+"</nobr></a></li>");
+            $(".bodyContent-leftmenuTabcontent").append("<div class='tab-pane fade in active' id='"+item0.item.puciId+"'></div>");
+        }
+        else
+        {
+            $(".bodyContent-leftmenuTab").append("<li><a href='#"+item0.item.puciId+"' onclick=setSecondItemId('"+item0.item.puciId+"') data-toggle='tab' title="+item0.item.name+"><nobr>"+item0.item.name+"</nobr></a></li>");
+            $(".bodyContent-leftmenuTabcontent").append("<div class='tab-pane fade' id='"+item0.item.puciId+"'></div>");
+        }
+        $("#"+item0.item.puciId).append("<ul class='list-group bodyContent-leftmenuList' id='ul"+item0.item.puciId+"'></ul>");
+        getFirstLeftMenuList(item0);
+    });
+
+    var wid="";
+    if(len==0) {
+        wid="";
+    }else if(len<=3) {
+        wid="30%";
+    }else {
+        wid=Math.floor(100/len)+"%";
+    }
+    $(".bodyContent-leftmenuTab li").css("width",wid);
+    $(".bodyContent-leftmenuTab li.active").css("width",wid);
+}
+//递归显示课程目录
+function getFirstLeftMenuList(item)
+{
+    if(item.listMap==null)
+    { return;}
+    $.each(item.listMap, function (i, subItem) {
+        //var id="item"+i;
+        var id="item"+subItem.item.puciId;
+        //alert(subItem.listMap.length);
+        //var logoPath=subItem.item.logoPath?subItem.item.logoPath:"/img/companyLOGO.png";
+        var logoPath=subItem.item.logoPath;
+        var display=subItem.item.display;
+        if(logoPath==null||logoPath==""){
+            logoPath=getInImgLib(subItem.item.name);
+            if(logoPath==null||logoPath==""){
+                logoPath="/img/training/setting.png";
+            }
+        }
+        //var logoPath=subItem.item.logoPath?subItem.item.logoPath:"/img/training/setting.png";
+        if(!subItem.listMap.length) {//叶子节点
+            $("#ul" + item.item.puciId ).append("<li class='list-group-item bodyContent-leftmenuItem'>" +
+                "<a  "+"id='"+id+"'  title='"+subItem.item.name+"' onclick='changeItemClass(id);' href='javascript:;' class='btn left-first-item leftItemShowImage'" +
+                " itemId='"+subItem.item.puciId+"'" +
+                " tempath='"+subItem.item.tempath+"' ><img src='"+logoPath+"'displaydata='"+display+"' title='"+subItem.item.name+"' class='hidden bodyContent-leftItemIcon'/>" + subItem.item.name + "</a></li>");
+
+
+
+        }
+        else
+        {
+            $("#ul" + item.item.puciId ).append("<li class='list-group-item bodyContent-leftmenuItem' ><a "+"id='"+id+"' title='"+subItem.item.name+"' onclick='changeItemClass(id);' href='javascript:;' class='btn left-first-item leftItemShowImage' itemId='"+subItem.item.puciId+"'> <img src='"+logoPath+"'displaydata='"+display+"' title='"+subItem.item.name+"' class='bodyContent-leftItemIcon hidden' />"+subItem.item.name+
+                "</a><ul id='tree"+subItem.item.puciId+"' class='ztree' style='display:none'></ul><ul class='list-group bodyContent-leftmenuSubList' id='ul"+subItem.item.puciId+"'></ul></li>");
+
+            var zData=[];
+            getLeftMenuList(subItem,zData);
+            $.fn.zTree.init($("#tree"+subItem.item.puciId), teachSetting, zData);
+            //alert(JSON.stringify(zData));
+        }
+    });
+}
+function getLeftMenuList(item,zData)
+{
+    if(item.listMap==null)
+    { return;}
+    $.each(item.listMap, function (i, subItem) {
+        var tempItem={
+            "id":subItem.item.puciId,
+            "pId":subItem.item.parentId,
+            "name":subItem.item.name
+
+        }
+        zData.push(tempItem);
+        //var logoPath=subItem.item.logoPath?subItem.item.logoPath:"/img/companyLOGO.png";
+        var logoPath=subItem.item.logoPath;
+        var display=subItem.item.display;
+        if(logoPath==null||logoPath==""){
+            logoPath=getInImgLib(subItem.item.name);
+            if(logoPath==null||logoPath==""){
+                logoPath="/img/training/setting.png";
+            }
+        }
+        //var logoPath=subItem.item.logoPath?subItem.item.logoPath:"/img/training/setting.png";
+        if(!subItem.listMap.length) {//叶子节点
+            $("#ul" + item.item.puciId ).append("<li class='list-group-item' style='display: none'><a href='javascript:;' class='bodyContent-leftmenuLeavenode leftItem' itemId='"+subItem.item.puciId+"' tempath='"+subItem.item.tempath+"' ><img src='"+logoPath+"'displaydata='"+display+"' title='"+subItem.item.name+"' class='hidden bodyContent-leftItemIcon'/>" + subItem.item.name + "</a></li>");
+        }
+        else
+        {
+            $("#ul" + item.item.puciId ).append("<li style='display: none' class='list-group-item  bodyContent-leftmenuItem'  ><a href='javascript:;' class='bodyContent-leftmenuRootnode leftItem' itemId='"+subItem.item.puciId+"'> <img src='"+logoPath+"'displaydata='"+display+"' title='"+subItem.item.name+"' class='bodyContent-leftItemIcon hidden' />"+subItem.item.name+
+                "</a><ul class='list-group bodyContent-leftmenuSubList' id='ul"+subItem.item.puciId+"'></ul></li>");
+            getLeftMenuList(subItem,zData);
+        }
+
+    });
+}
+//点击课程目录叶子节点，加载相关页面内容
+function loadCourseContent(e)
+{
+    $(".bodyContent-right").css("background-image","");
+    $(".bodyContent-rightPicList").css("display","none");
+    $(".bodyContent-right-topNav").css("display","block");
+    $(".bodyContent-rightPicList").html("");
+    if(isEdit)
+    {
+        $("#bodyContent-rightSelTemplate").css("display","");
+        if(e.attr("tempath")=="")
+        {
+            e.attr("tempath",$("#bodyContent-rightSelTemplate option:first").attr("tempath"));
+            setTemplate(e.attr("tempath"));
+        }
+        $("#bodyContent-rightSelTemplate").val(e.attr("tempath"));
+    }
+    else
+    {
+        if(e.attr("tempath")=="")
+        { $("iframe").attr("src","");return;}
+    }
+    setItemIframe(e.attr("tempath"),"?leaveId="+selectedItemId+"&courseId="+courseId);
+}
+//点击非叶子节点，加载下一级目录的图片列表
+function loadItemList(e)
+{
+    $(".bodyContent-right").css("background-image","url(/img/itemBG.jpg)");
+    $(".bodyContent-right-topNav").css("display","none");
+    $("#bodyContent-rightSelTemplate").css("display","none");
+    var strData="<div class='container' style='width:90%'><div class='row'>";
+    $("#ul"+selectedItemId).children().each(function(){
+        strData+="<div class='col-sm-3 imgMenuHeight' onmouseleave=imgLeave("+$(this).children("a").attr("itemId")+",'"+$(this).children("a").children("img").attr("src")+"','"+$(this).children("a").children("img").attr("title")+"')" +
+            " onmouseenter=imgEnter("+$(this).children("a").attr("itemId")+",'"+$(this).children("a").children("img").attr("src")+"','"+$(this).children("a").children("img").attr("title")+"')" +
+            " style='text-align: center;padding: 15px 0px'>" +
+            "<img class='itemImg'   src='"+$(this).children("a").children("img").attr("src")+
+            "'id='imgItemId"+$(this).children("a").attr("itemId")+"' onclick=ves.triggerDom('itemId',"+$(this).children("a").attr("itemId")+",'click') class='img-rounded'><div class='caption' style='position: relative;margin-top: -21px;width:60%;text-align: center;margin-left:20%;font-size:15px;background-color: #bdc4c5;border-radius: 5px;'><a href='javascript:;' style='color: white' onclick=ves.triggerDom('itemId',"+$(this).children("a").attr("itemId")+",'click')>"+$(this).children("a").html()+"</a></div></div>";
+    });
+    strData+="</div></div>";
+    $(".bodyContent-rightPicList").css("display","block").html(strData);
+    setIframeLayout(3);
+}
+/********模板****/
+//加载模板
+function loadTemplateList()
+{
+    var param = {
+        "courseId":courseId
+    }
+    var res = $.post("/template-manager-action!getAllTemplateByCouId",
+        param,
+        function(data) //回调函数
+        {
+            if (data[0].result=="1") {
+                var selOpt="";
+                $.each(data[0].list, function (i, item) {
+                    selOpt+="<option value='"+item[1]+"' tempath='"+item[1]+"'>"+item[0]+"</option>";
+
+                });
+                $("#bodyContent-rightSelTemplate").html(selOpt);
+                $("#bodyContent-rightSelTemplate").change(function(){
+                    var va=$(this).val();
+                    if($(this).val()==$("[itemId="+selectedItemId+"]").attr("tempath"))
+                    {return;}
+                    confirm("确认要修改模板吗？原有模板内容将会删除！",function() {
+                        $("[itemId=" + selectedItemId + "]").attr("tempath", va);
+                        setTemplate(va);
+                        //ves.triggerDom("itemId", selectedItemId, "click");
+                        $("[itemId=" + selectedItemId + "]")[0].click();
+                    },function() {
+                        $("#bodyContent-rightSelTemplate").val($("[itemId="+selectedItemId+"]").attr("tempath"));
+                    });
+                    /*if(setConfirm) {
+                     $("[itemId=" + selectedItemId + "]").attr("tempath", $(this).val());
+                     setTemplate($(this).val());
+                     ves.triggerDom("itemId", selectedItemId, "click");
+
+                     }else
+                     {$(this).val($("[itemId="+selectedItemId+"]").attr("tempath"));}*/
+                });
+            }
+        }, "json"
+    ).error(function() {alert("暂时无法连接到服务器！\n"+"可能是以下原因：\n"+"网络故障\n"+"您的账号已在其他地方登录\n"+"服务器关闭\n");});
+}
+//修改指定目录项模板
+function setTemplate(tempath)
+{
+    var param = {
+        "puciId":selectedItemId,
+        "tempath":tempath
+    }
+    var res = $.post("/Items-manager-action!saveItemTemplate",
+        param,
+        function(data) //回调函数
+        {}, "json"
+    ).error(function() {alert("暂时无法连接到服务器！\n"+"可能是以下原因：\n"+"网络故障\n"+"您的账号已在其他地方登录\n"+"服务器关闭\n");});
+}
+/*******切换教学/编辑模式***/
+
+function setItemIframe(path,data)
+{
+    if(path=="")
+    {return;}
+    else if(path=="theoryunity3D")
+    {
+        setIframeLayout(1);
+        if(isEdit) {
+            $("#iframepage").attr("src", "../coursemgr/courseTemplate/theoryEdit.jsp" + data);
+            setTimeout(function(){
+                $("#iframepage2").attr("src", "../coursemgr/courseTemplate/unity3DEdit.jsp" + data);
+            },500);
+        }
+
+        else {
+            $("#iframepage").attr("src", "../coursemgr/courseTemplate/theory.jsp" + data);
+            setTimeout(function(){
+                $("#iframepage2").attr("src", "../coursemgr/courseTemplate/unity3D.jsp" + data);
+            },500);
+        }
+        return;
+    }
+    else if(path=="unity3Dtheory")
+    {
+        setIframeLayout(1);
+        if(isEdit) {
+            $("#iframepage2").attr("src", "../coursemgr/courseTemplate/theoryEdit.jsp" + data);
+            setTimeout(function(){
+                $("#iframepage").attr("src", "../coursemgr/courseTemplate/unity3DEdit.jsp" + data);
+            },500);
+        }
+
+        else {
+            $("#iframepage2").attr("src", "../coursemgr/courseTemplate/theory.jsp" + data);
+            setTimeout(function(){
+                $("#iframepage").attr("src", "../coursemgr/courseTemplate/unity3D.jsp" + data);
+
+            },500);
+        }
+        return;
+    }
+    else if(path=="unity3Dppt")
+    {
+        setIframeLayout(1);
+        if(isEdit) {
+            $("#iframepage2").attr("src", "../coursemgr/courseTemplate/pptSwfEdit.jsp" + data);
+            setTimeout(function(){
+                $("#iframepage").attr("src", "../coursemgr/courseTemplate/unity3DEdit.jsp" + data);
+            },500);
+        }
+
+        else {
+            $("#iframepage2").attr("src", "../coursemgr/courseTemplate/pptSwf.jsp" + data);
+            setTimeout(function(){
+                $("#iframepage").attr("src", "../coursemgr/courseTemplate/unity3D.jsp" + data);
+            },500);
+        }
+        return;
+    }
+    else if(path=="pdfunity3D")
+    {
+        setIframeLayout(1);
+        if(isEdit) {
+            $("#iframepage").attr("src", "../coursemgr/courseTemplate/pdfEdit.jsp" + data);
+            setTimeout(function(){
+                $("#iframepage2").attr("src", "../coursemgr/courseTemplate/unity3DEdit.jsp" + data);
+            },500);
+        }
+        else {
+            $("#iframepage").attr("src", "../coursemgr/courseTemplate/pdf.jsp" + data);
+            setTimeout(function(){
+                $("#iframepage2").attr("src", "../coursemgr/courseTemplate/unity3D.jsp" + data);
+            },500);
+        }
+        return;
+    }
+    else if(path=="pptpdf")
+    {
+        setIframeLayout(1);
+        if(isEdit) {
+            $("#iframepage").attr("src", "../coursemgr/courseTemplate/pdfEdit.jsp" + data);
+            setTimeout(function(){
+                $("#iframepage2").attr("src", "../coursemgr/courseTemplate/officeEdit.jsp" + data);
+            },500);
+        }
+        else {
+            $("#iframepage").attr("src", "../coursemgr/courseTemplate/pdf.jsp" + data);
+            setTimeout(function(){
+                $("#iframepage2").attr("src", "../coursemgr/courseTemplate/office.jsp" + data);
+            },500);
+        }
+        return;
+    }
+    else if(path=="swfppt")
+    {
+        setIframeLayout(1);
+        if(isEdit) {
+            $("#iframepage").attr("src", "../coursemgr/courseTemplate/swfEdit.jsp" + data);
+            setTimeout(function(){
+                $("#iframepage2").attr("src", "../coursemgr/courseTemplate/pptSwfEdit.jsp" + data);
+            },500);
+        }
+        else {
+            $("#iframepage").attr("src", "../coursemgr/courseTemplate/swf.jsp" + data);
+            setTimeout(function(){
+                $("#iframepage2").attr("src", "../coursemgr/courseTemplate/pptSwf.jsp" + data);
+            },500);
+        }
+        return;
+    }else if(path == "theory")
+    {
+
+        setIframeLayout(0);
+        $("#iframepage").attr("src","/Items-content-manager-theory-item"+data);
+        //$("#iframepage").attr("src","/openword"+data);
+        $("#iframepage2").attr("src","");
+        return;
+    }
+    var temPath=path;
+    if(isEdit) {
+        temPath=path.replace(".jsp","Edit.jsp");
+    }
+    setIframeLayout(0);
+    $("#iframepage").attr("src","../coursemgr/courseTemplate"+temPath+data);
+    $("#iframepage2").attr("src","");
+}
+function setIframeLayout(index)
+{
+    $("#inputLayout").css("display","none");
+    if(index==0)//右列隐藏
+    {
+        $("#leftIframe").css("display","block").removeClass().addClass("col-md-12");
+        $("#rightIframe").css("display","none").removeClass();
+    }
+    else if(index ==1)//双列布局
+    {
+        $("#inputLayout").css("display","block");
+        $("#inputLayout").val(6);
+        $("#leftIframe").css("display","block").removeClass().addClass("col-md-6");
+        $("#rightIframe").css("display","block").removeClass().addClass("col-md-6");
+    }
+    else if(index==2)//左列隐藏
+    {
+        $("#rightIframe".css("display","block")).removeClass().addClass("col-md-6");
+        $("#leftIframe").css("display","none").removeClass();
+    }
+    else if(index==3)//双列隐藏
+    {   $("#leftIframe,#rightIframe").css("display","none");
+        $("#iframepage,#iframepage2").attr("src","");
+        $("#iframepage,#iframepage2").css("min-height","");
+    }
+}
+//判断用户类型是否为编辑模式
+function getTemplatePath()
+{
+
+}
+function isEditType()
+{
+    if(userType==ves.Constant.USER_TYPE.teacher&&courseType==ves.Constant.COURSE_TYPE.private)
+    {return true;}
+    else if(userType==ves.Constant.USER_TYPE.privilege||userType==ves.Constant.USER_TYPE.manager)
+    {return true;}
+    return false;
+}
+
+function setSecondItemId(id)
+{
+    $(".ztree").css("display","none");
+    selSecondItemId=id;
+}
+function imgEnter(itemId,src,titlename)
+{
+    $("#imgItemId"+itemId).css('border','5px solid white');
+    var imgPath=iconInImgLib.get(titlename);
+    var imgPathxuanting=iconInImgLib.get(titlename+"xuanting");
+    if(imgPath!=null&&imgPath!=""){
+        if(imgPath==src){
+            $("#imgItemId"+itemId).attr('src',imgPathxuanting);
+        }
+
+    }
+}
+function imgLeave(itemId,imgsrc,titlename)
+{
+    var imgPath=iconInImgLib.get(titlename+"xuanting");
+    if(imgPath!=null&&imgPath!=""){
+        $("#imgItemId"+itemId).attr('src',imgsrc);
+    }
+    $("#imgItemId"+itemId).css('border','none');
+}
+function getInImgLib(str){
+    var imgPath=iconInImgLib.get(str);
+    return imgPath;
+}
+$(document).ready(function(){
+    isEdit=isEditType();
+
+    //点击左侧目录菜单事件
+    $(document).on('click','.leftItem',function(){
+        //设定当前选中颜色为红色
+        $(".leftItem").css("color","rgb(24,100,124)");
+        $(this).css("color","red");
+        selectedItemId=$(this).attr("itemId");
+        if($(this).hasClass("bodyContent-leftmenuRootnode"))//点击非叶子节点
+        {loadItemList($(this));}
+        else if($(this).hasClass("bodyContent-leftmenuLeavenode"))//点击叶子节点
+        {loadCourseContent($(this));}
+    });
+    //和leftItem一样
+    //点击二级目录，若有子目录则显示子目录列表，无子目录则加载资源上传界面
+    $(document).on('click','.leftItemShowImage',function(){
+        selectedItemId=$(this).attr("itemId");
+        //if($(this).hasClass("bodyContent-leftmenuRootnode")) {
+        //    loadItemList($(this));
+        //} else {
+        //    loadCourseContent($(this));
+        //}
+        var aa=this.childNodes.length;
+        if(this.childNodes.length>2) {
+            loadItemList($(this));
+        } else  {
+            loadCourseContent($(this));
+        }
+    });
+    $(document).on('mouseenter','.leftItem',function(){
+        $(this).css("background-color","rgb(156, 190, 218)");
+    });
+    $(document).on('mouseleave','.leftItem',function(){
+        $(this).css("background-color","rgb(120, 228, 240)");
+    });
+
+    if(isEdit)//如果是编辑模式的话
+    {
+        loadTemplateList();
+        $('#editcatalog-Modal').on('show.bs.modal', function () {
+            $("#editcatalog-iframe").attr("src","/coursemgr/editItem.jsp?parentId="+selSecondItemId);
+        });
+    }
+    $("#inputLayout").change(function(){
+        if($(this).val()==0)
+        {$("#leftIframe").css("display","none");$("#rightIfram").css("display","block");}
+        else if($(this).val()==12)
+        {$("#rightIframe").css("display","none");$("#leftIfram").css("display","block");}
+        else {$("#rightIframe,#leftIframe").css("display","block");}
+        $("#leftIframe").removeClass().addClass("col-md-"+$(this).val());
+        $("#rightIframe").removeClass().addClass("col-md-"+(12-$(this).val()));
+    });
+});

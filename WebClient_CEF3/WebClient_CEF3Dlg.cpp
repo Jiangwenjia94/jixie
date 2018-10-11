@@ -49,7 +49,6 @@ int TaskBarHeight()
 
 void CWebClient_CEF3Dlg::Config()
 {
-	string conf[6];
 	ifstream in("config\\ini.txt");
 	string temp;
 
@@ -71,7 +70,6 @@ HRESULT CWebClient_CEF3Dlg::OnHotKey(WPARAM wParam, LPARAM lParam)//全局快捷键
 {
 	if (wParam == 199)
 	{
-		
 		ip.DoModal();
 		ip_url = ip.GetUrl();
 		if (!ip_url.empty())
@@ -135,6 +133,9 @@ ON_WM_SETTINGCHANGE()
 ON_WM_MOUSEWHEEL()
 ON_WM_WININICHANGE()
 ON_WM_DISPLAYCHANGE()
+//ON_WM_MOUSEMOVE()
+//ON_WM_LBUTTONDOWN()
+//ON_WM_LBUTTONUP()
 END_MESSAGE_MAP()
 
 
@@ -184,19 +185,21 @@ BOOL CWebClient_CEF3Dlg::OnInitDialog()
 	RECT mrect;
 	GetClientRect(&mrect);
 
-//	m_min.SetWindowPos(&wndTop, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-	m_min.SetWindowPos(NULL, mrect.right - 41, 5, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);//设定位置
-	m_min.SetWindowPos(NULL, 0, 0, 22, 22, SWP_NOZORDER | SWP_NOMOVE);//设定大小
-	m_close.SetWindowPos(NULL, mrect.right - 16, 5, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
-	m_close.SetWindowPos(NULL, 0, 0, 22, 22, SWP_NOZORDER | SWP_NOMOVE);//设定大小
+	m_min.SetWindowPos(NULL, 0, 0, 0, 0,SWP_HIDEWINDOW);
+	m_close.SetWindowPos(NULL, 0, 0, 0, 0, SWP_HIDEWINDOW);
+//	m_min.SetWindowPos(NULL, mrect.right - 41, 5, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);//设定位置
+//	m_min.SetWindowPos(NULL, 0, 0, 22, 22, SWP_NOZORDER | SWP_NOMOVE);//设定大小
+//	m_close.SetWindowPos(NULL, mrect.right - 16, 5, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
+//	m_close.SetWindowPos(NULL, 0, 0, 22, 22, SWP_NOZORDER | SWP_NOMOVE);//设定大小
+
 //	out << "Oniti" << mrect.right - 41 << " " << cx << endl;
 	/*CDC* pDC = GetDC();
 	pDC->SetBkColor(RGB(0,0,255));
 	m_close.SetBkGnd(pDC);*///由于图标设置在浏览器之前，导致透明PNG图片显示的为MFC对话框颜色
-	m_close.LoadStdImage(IDB_PNG_CLOSE, _T("PNG"));
+	/*m_close.LoadStdImage(IDB_PNG_CLOSE, _T("PNG"));
 	m_close.EnableToggle(TRUE);
 	m_min.LoadStdImage(IDB_PNG_MIN, _T("PNG"));
-	m_min.EnableToggle(TRUE);
+	m_min.EnableToggle(TRUE);*/
 
 
 
@@ -220,15 +223,15 @@ BOOL CWebClient_CEF3Dlg::OnInitDialog()
 	//ShowWindow(SW_MAXIMIZE);//全屏显示
 
 	//去除标题栏
-	DWORD dwStyle = GetStyle();//获取旧样式    
-	DWORD dwNewStyle = WS_OVERLAPPED | WS_VISIBLE | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
-	dwNewStyle &= dwStyle;//按位与将旧样式去掉    
-	SetWindowLong(m_hWnd, GWL_STYLE, dwNewStyle);//设置成新的样式    
-	DWORD dwExStyle = GetExStyle();//获取旧扩展样式    
-	DWORD dwNewExStyle = WS_EX_LEFT | WS_EX_LTRREADING | WS_EX_RIGHTSCROLLBAR;
-	dwNewExStyle &= dwExStyle;//按位与将旧扩展样式去掉    
-	SetWindowLong(m_hWnd, GWL_EXSTYLE, dwNewExStyle);//设置新的扩展样式    
-	SetWindowPos(NULL, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
+	//DWORD dwStyle = GetStyle();//获取旧样式    
+	//DWORD dwNewStyle = WS_OVERLAPPED | WS_VISIBLE | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+	//dwNewStyle &= dwStyle;//按位与将旧样式去掉    
+	//SetWindowLong(m_hWnd, GWL_STYLE, dwNewStyle);//设置成新的样式    
+	//DWORD dwExStyle = GetExStyle();//获取旧扩展样式    
+	//DWORD dwNewExStyle = WS_EX_LEFT | WS_EX_LTRREADING | WS_EX_RIGHTSCROLLBAR;
+	//dwNewExStyle &= dwExStyle;//按位与将旧扩展样式去掉    
+	//SetWindowLong(m_hWnd, GWL_EXSTYLE, dwNewExStyle);//设置新的扩展样式    
+	//SetWindowPos(NULL, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
 	//
 
 	
@@ -254,7 +257,22 @@ BOOL CWebClient_CEF3Dlg::OnInitDialog()
 	std::string site4 = "http://localhost:8080/ABC/index.html";
 	std::string site5 = "https://www.youtube.com/watch?v=siOHh0uzcuY&html5=True";
 	info.SetAsChild(GetSafeHwnd(), rectnew);
-	CefBrowserHost::CreateBrowser(info, client.get(), Address, b_settings, NULL); 
+	CefBrowserHost::CreateBrowser(info, client.get(), Address, b_settings, NULL);
+	string iip;
+	string pt;
+	int start = Address.find_last_of("/") + 1;
+	int end = Address.find_last_of(":");
+	iip = Address.substr(start,end - start);
+	pt = Address.substr(end + 1);
+	std::ofstream out("config\\ini.txt");
+	conf[3] = "IP=" + iip;
+	conf[4] = "PORT=" + pt;
+	for (int j = 0; j < 5; j++)
+	{
+		out << conf[j] << std::endl;
+	}
+	out.close();
+
 	client = NULL;//暂定
 	
 
@@ -389,16 +407,18 @@ void CWebClient_CEF3Dlg::OnBnClickedButtonClose()
 LRESULT CWebClient_CEF3Dlg::OnMsgHandler(WPARAM w, LPARAM l)//登陆窗口
 {
 
-	int cx = GetSystemMetrics(SM_CXFULLSCREEN);
-	int cy = GetSystemMetrics(SM_CYFULLSCREEN);
+//	int cx = GetSystemMetrics(SM_CXFULLSCREEN);
+//	int cy = GetSystemMetrics(SM_CYFULLSCREEN);
+	int cx = GetSystemMetrics(SM_CXSCREEN);
+	int cy = GetSystemMetrics(SM_CYSCREEN);
 	//
 	CWnd::SetWindowPos(NULL, 0,0 , cx*0.5, cy*0.5, SWP_NOZORDER | SWP_NOMOVE);
 	CenterWindow();
 //	CenterWindow();
 	RECT rect;
 	GetClientRect(&rect);
-	m_min.SetWindowPos(NULL, rect.right - 55, 5, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);//设定位置
-	m_close.SetWindowPos(NULL, rect.right - 30, 5, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);
+//	m_min.SetWindowPos(NULL, rect.right - 55, 5, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);//设定位置
+//	m_close.SetWindowPos(NULL, rect.right - 30, 5, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);
 //	out << "login" << rect.right - 55<< endl;
 	Invalidate(false);
 //	out << "login" << endl;
@@ -422,26 +442,27 @@ LRESULT CWebClient_CEF3Dlg::OnMsgHandler2(WPARAM w, LPARAM l)//全屏
 	state.cbSize = sizeof(state);
 	state.hWnd = FindWindow("Shell_TrayWnd", NULL)->GetSafeHwnd();
 	UINT uState = (UINT)SHAppBarMessage(ABM_GETSTATE, &state);
-	if (uState == 1)
-	{
-		int cx = GetSystemMetrics(SM_CXSCREEN);
-		int cy = GetSystemMetrics(SM_CYSCREEN);
-		CWnd::SetWindowPos(NULL, 0, 0, cx, cy - 1, SWP_NOZORDER);//运行到这里会转到OnSizes
-		//	out << "QP1" << endl;
-	}
-	else
-	{
-		int cx = GetSystemMetrics(SM_CXFULLSCREEN);
-		int cy = GetSystemMetrics(SM_CYFULLSCREEN);
-		CWnd::SetWindowPos(NULL, 0, 0, cx, cy + TaskBarHeight(), SWP_NOZORDER);
-		//	out << "QP2" << endl;
-	}
+	//if (uState == 1)
+	//{
+	//	int cx = GetSystemMetrics(SM_CXSCREEN);
+	//	int cy = GetSystemMetrics(SM_CYSCREEN);
+	//	CWnd::SetWindowPos(NULL, 0, 0, cx, cy - 1, SWP_NOZORDER);//运行到这里会转到OnSizes
+	//	//	out << "QP1" << endl;
+	//}
+	//else
+	//{
+	//	int cx = GetSystemMetrics(SM_CXFULLSCREEN);
+	//	int cy = GetSystemMetrics(SM_CYFULLSCREEN);
+	//	CWnd::SetWindowPos(NULL, 0, 0, cx, cy + TaskBarHeight(), SWP_NOZORDER);
+	//	//	out << "QP2" << endl;
+	//}
+	ShowWindow(SW_MAXIMIZE);//全屏显示
 	//
 
 	RECT rect;
 	GetClientRect(&rect);
-	m_min.SetWindowPos(NULL, rect.right - 55, 5, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);//设定位置
-	m_close.SetWindowPos(NULL, rect.right - 30, 5, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
+//	m_min.SetWindowPos(NULL, rect.right - 55, 5, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);//设定位置
+//	m_close.SetWindowPos(NULL, rect.right - 30, 5, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
 	is_login = false;
 	return 0;
 }
@@ -564,13 +585,15 @@ void CWebClient_CEF3Dlg::OnSettingChange(UINT uFlags, LPCTSTR lpszSection)
 		state.cbSize = sizeof(state);
 		state.hWnd = FindWindow("Shell_TrayWnd", NULL)->GetSafeHwnd();
 		UINT uState = (UINT)SHAppBarMessage(ABM_GETSTATE, &state);
-		if (uState == 1)
+		if (uState == 1) //隐藏任务栏
 		{
-			int cx = GetSystemMetrics(SM_CXSCREEN);
+			/*int cx = GetSystemMetrics(SM_CXSCREEN);
 			int cy = GetSystemMetrics(SM_CYSCREEN);
 			CWnd::SetWindowPos(NULL, 0, 0, cx, cy - 1, SWP_NOZORDER);
+			MessageBox("123");*/
+			ShowWindow(SW_MAXIMIZE);//全屏显示
 		}
-		else
+		else //显示任务栏
 		{
 			int cx = GetSystemMetrics(SM_CXFULLSCREEN);
 			int cy = GetSystemMetrics(SM_CYFULLSCREEN);
@@ -639,21 +662,58 @@ void CWebClient_CEF3Dlg::OnDisplayChange(UINT nImageDepth, int cxScreen, int cyS
 
 		RECT rect;
 		GetClientRect(&rect);
-		m_min.SetWindowPos(NULL, rect.right - 55, 5, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);//设定位置
-		m_close.SetWindowPos(NULL, rect.right - 30, 5, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
+//		m_min.SetWindowPos(NULL, rect.right - 55, 5, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER);//设定位置
+//		m_close.SetWindowPos(NULL, rect.right - 30, 5, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
 	}
 }
 
 LRESULT CWebClient_CEF3Dlg::OnMsgHandlerFullScreen(WPARAM, LPARAM)
 {
-	m_min.ShowWindow(FALSE);
-	m_close.ShowWindow(FALSE);
+//	m_min.ShowWindow(FALSE);
+//	m_close.ShowWindow(FALSE);
 	return 0;
 }
 
 LRESULT CWebClient_CEF3Dlg::OnMsgHandlerExitFullScreen(WPARAM, LPARAM)
 {
-	m_min.ShowWindow(TRUE);
-	m_close.ShowWindow(TRUE);
+//	m_min.ShowWindow(TRUE);
+//	m_close.ShowWindow(TRUE);
 	return 0;
 }
+
+//void CWebClient_CEF3Dlg::OnMouseMove(UINT nFlags, CPoint point)
+//{
+//	// TODO:  在此添加消息处理程序代码和/或调用默认值
+//	static CPoint PrePoint = CPoint(0, 0);
+//	if (MK_LBUTTON == nFlags)
+//	{
+//		if (point != PrePoint)
+//		{
+//			CPoint ptTemp = point - PrePoint;
+//			CRect rcWindow;
+//			GetWindowRect(&rcWindow);
+//			rcWindow.OffsetRect(ptTemp.x, ptTemp.y);
+//			MoveWindow(&rcWindow);
+//			return;
+//		}
+//	}
+//	PrePoint = point;
+//	CDialog::OnMouseMove(nFlags, point);
+//	CDialogEx::OnMouseMove(nFlags, point);
+//
+//}
+
+
+//void CWebClient_CEF3Dlg::OnLButtonDown(UINT nFlags, CPoint point)
+//{
+//	// TODO:  在此添加消息处理程序代码和/或调用默认值
+//	SetCapture();
+//	CDialogEx::OnLButtonDown(nFlags, point);
+//}
+
+//void CWebClient_CEF3Dlg::OnLButtonUp(UINT nFlags, CPoint point)
+//{
+//	// TODO:  在此添加消息处理程序代码和/或调用默认值
+//	ReleaseCapture();
+//	CDialogEx::OnLButtonUp(nFlags, point);
+//}
